@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,13 +19,13 @@ var errTCPAndLMTP = errors.New("smtp: cannot start LMTP server listening on a TC
 // A function that creates SASL servers.
 type SaslServerFactory func(conn *Conn) sasl.Server
 
-// Logger interface is used by Server to report unexpected internal errors.
+// Logger 日志接口
 type Logger interface {
 	Printf(format string, v ...interface{})
 	Println(v ...interface{})
 }
 
-// A SMTP server.
+// Server SMTP服务
 type Server struct {
 	// TCP or Unix address to listen on.
 	Addr string
@@ -73,7 +74,7 @@ type Server struct {
 	conns     map[*Conn]struct{}
 }
 
-// New creates a new SMTP server.
+// NewServer 创建新的SMT服务
 func NewServer(be Backend) *Server {
 	return &Server{
 		// Doubled maximum line length per RFC 5321 (Section 4.5.3.1.6)
@@ -103,7 +104,7 @@ func NewServer(be Backend) *Server {
 	}
 }
 
-// Serve accepts incoming connections on the Listener l.
+// Serve 基于监听器接收消息
 func (s *Server) Serve(l net.Listener) error {
 	s.locker.Lock()
 	s.listeners = append(s.listeners, l)
@@ -116,7 +117,6 @@ func (s *Server) Serve(l net.Listener) error {
 		if err != nil {
 			select {
 			case <-s.done:
-				// we called Close()
 				return nil
 			default:
 			}
@@ -135,15 +135,18 @@ func (s *Server) Serve(l net.Listener) error {
 			}
 			return err
 		}
+
+		// 开启协程，处理连接
 		go func() {
-			err := s.handleConn(newConn(c, s))
-			if err != nil {
-				s.ErrorLog.Printf("handler error: %s", err)
+			err = s.handleConn(newConn(c, s))
+			if err != nil && !strings.Contains(err.Error(), "closed network connection") {
+				s.ErrorLog.Printf("处理客户端连接失败: %s", err)
 			}
 		}()
 	}
 }
 
+// handleConn 处理客户端连接
 func (s *Server) handleConn(c *Conn) error {
 	s.locker.Lock()
 	s.conns[c] = struct{}{}
@@ -151,7 +154,6 @@ func (s *Server) handleConn(c *Conn) error {
 
 	defer func() {
 		c.Close()
-
 		s.locker.Lock()
 		delete(s.conns, c)
 		s.locker.Unlock()
@@ -201,10 +203,7 @@ func (s *Server) handleConn(c *Conn) error {
 	}
 }
 
-// ListenAndServe listens on the network address s.Addr and then calls Serve
-// to handle requests on incoming connections.
-//
-// If s.Addr is blank and LMTP is disabled, ":smtp" is used.
+// ListenAndServe 启动SMTP服务
 func (s *Server) ListenAndServe() error {
 	network := "tcp"
 	if s.LMTP {
@@ -224,10 +223,7 @@ func (s *Server) ListenAndServe() error {
 	return s.Serve(l)
 }
 
-// ListenAndServeTLS listens on the TCP network address s.Addr and then calls
-// Serve to handle requests on incoming TLS connections.
-//
-// If s.Addr is blank, ":smtps" is used.
+// ListenAndServeTLS 启动SMTPS服务
 func (s *Server) ListenAndServeTLS() error {
 	if s.LMTP {
 		return errTCPAndLMTP
@@ -246,10 +242,7 @@ func (s *Server) ListenAndServeTLS() error {
 	return s.Serve(l)
 }
 
-// Close immediately closes all active listeners and connections.
-//
-// Close returns any error returned from closing the server's underlying
-// listener(s).
+// Close 关闭监听器
 func (s *Server) Close() error {
 	select {
 	case <-s.done:
@@ -274,10 +267,7 @@ func (s *Server) Close() error {
 	return err
 }
 
-// EnableAuth enables an authentication mechanism on this server.
-//
-// This function should not be called directly, it must only be used by
-// libraries implementing extensions of the SMTP protocol.
+// EnableAuth 开启权限
 func (s *Server) EnableAuth(name string, f SaslServerFactory) {
 	s.auths[name] = f
 }

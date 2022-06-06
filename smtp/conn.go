@@ -91,39 +91,39 @@ func (c *Conn) init() {
 	c.text = textproto.NewConn(rwc)
 }
 
-// Commands are dispatched to the appropriate handler functions.
+// handle 处理连接命令
 func (c *Conn) handle(cmd string, arg string) {
-	// If panic happens during command handling - send 421 response
-	// and close connection.
+	// 如果抛出了异常，返回421响应并关闭连接对象
 	defer func() {
 		if err := recover(); err != nil {
-			c.WriteResponse(421, EnhancedCode{4, 0, 0}, "Internal server error")
+			c.WriteResponse(421, EnhancedCode{4, 0, 0}, "服务器内容错误")
 			c.Close()
 
 			stack := debug.Stack()
-			c.server.ErrorLog.Printf("panic serving %v: %v\n%s", c.State().RemoteAddr, err, stack)
+			c.server.ErrorLog.Printf("异常信息 %v: %v\n%s", c.State().RemoteAddr, err, stack)
 		}
 	}()
 
+	// 命令为空
 	if cmd == "" {
-		c.protocolError(500, EnhancedCode{5, 5, 2}, "Error: bad syntax")
+		c.protocolError(500, EnhancedCode{5, 5, 2}, "错误：cmd命令不能为空")
 		return
 	}
 
+	// 处理不同的命令
 	cmd = strings.ToUpper(cmd)
 	switch cmd {
 	case "SEND", "SOML", "SAML", "EXPN", "HELP", "TURN":
-		// These commands are not implemented in any state
-		c.WriteResponse(502, EnhancedCode{5, 5, 1}, fmt.Sprintf("%v command not implemented", cmd))
+		c.WriteResponse(502, EnhancedCode{5, 5, 1}, fmt.Sprintf("%v 命令未实现", cmd))
 	case "HELO", "EHLO", "LHLO":
 		lmtp := cmd == "LHLO"
 		enhanced := lmtp || cmd == "EHLO"
 		if c.server.LMTP && !lmtp {
-			c.WriteResponse(500, EnhancedCode{5, 5, 1}, "This is a LMTP server, use LHLO")
+			c.WriteResponse(500, EnhancedCode{5, 5, 1}, "这是一个 LMTP 服务, 使用 LHLO")
 			return
 		}
 		if !c.server.LMTP && lmtp {
-			c.WriteResponse(500, EnhancedCode{5, 5, 1}, "This is not a LMTP server")
+			c.WriteResponse(500, EnhancedCode{5, 5, 1}, "这不是一个 LMTP 服务")
 			return
 		}
 		c.handleGreet(enhanced, arg)
@@ -132,29 +132,29 @@ func (c *Conn) handle(cmd string, arg string) {
 	case "RCPT":
 		c.handleRcpt(arg)
 	case "VRFY":
-		c.WriteResponse(252, EnhancedCode{2, 5, 0}, "Cannot VRFY user, but will accept message")
+		c.WriteResponse(252, EnhancedCode{2, 5, 0}, "无法验证用户，但是会接收消息")
 	case "NOOP":
-		c.WriteResponse(250, EnhancedCode{2, 0, 0}, "I have sucessfully done nothing")
+		c.WriteResponse(250, EnhancedCode{2, 0, 0}, "成功的处理了NOOP命令")
 	case "RSET": // Reset session
 		c.reset()
-		c.WriteResponse(250, EnhancedCode{2, 0, 0}, "Session reset")
+		c.WriteResponse(250, EnhancedCode{2, 0, 0}, "重置会话")
 	case "BDAT":
 		c.handleBdat(arg)
 	case "DATA":
 		c.handleData(arg)
 	case "QUIT":
-		c.WriteResponse(221, EnhancedCode{2, 0, 0}, "Bye")
+		c.WriteResponse(221, EnhancedCode{2, 0, 0}, "再见")
 		c.Close()
 	case "AUTH":
 		if c.server.AuthDisabled {
-			c.protocolError(500, EnhancedCode{5, 5, 2}, "Syntax error, AUTH command unrecognized")
+			c.protocolError(500, EnhancedCode{5, 5, 2}, "语法错误, AUTH 命令不推荐")
 		} else {
 			c.handleAuth(arg)
 		}
 	case "STARTTLS":
 		c.handleStartTLS()
 	default:
-		msg := fmt.Sprintf("Syntax errors, %v command unrecognized", cmd)
+		msg := fmt.Sprintf("语法错误, %v 命令不推荐", cmd)
 		c.protocolError(500, EnhancedCode{5, 5, 2}, msg)
 	}
 }
@@ -169,7 +169,7 @@ func (c *Conn) Session() Session {
 	return c.session
 }
 
-// Setting the user resets any message being generated
+// SetSession 设置会话
 func (c *Conn) SetSession(session Session) {
 	c.locker.Lock()
 	defer c.locker.Unlock()
@@ -292,71 +292,73 @@ func (c *Conn) handleGreet(enhanced bool, arg string) {
 	c.WriteResponse(250, NoEnhancedCode, args...)
 }
 
-// READY state -> waiting for MAIL
+// handleMail 处理邮件内容
 func (c *Conn) handleMail(arg string) {
+	// 打招呼
 	if c.helo == "" {
-		c.WriteResponse(502, EnhancedCode{2, 5, 1}, "Please introduce yourself first.")
-		return
-	}
-	if c.bdatPipe != nil {
-		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "MAIL not allowed during message transfer")
+		c.WriteResponse(502, EnhancedCode{2, 5, 1}, "请先介绍您自己，hello内容不能为空")
 		return
 	}
 
+	// 管道为空
+	if c.bdatPipe != nil {
+		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "MAIL 不允许数据传输")
+		return
+	}
+
+	// 发件人
 	if len(arg) < 6 || strings.ToUpper(arg[0:5]) != "FROM:" {
-		c.WriteResponse(501, EnhancedCode{5, 5, 2}, "Was expecting MAIL arg syntax of FROM:<address>")
+		c.WriteResponse(501, EnhancedCode{5, 5, 2}, "语法错误，期望的格式是 FROM:<address>")
 		return
 	}
 	fromArgs := strings.Split(strings.Trim(arg[5:], " "), " ")
 	if c.server.Strict {
 		if !strings.HasPrefix(fromArgs[0], "<") || !strings.HasSuffix(fromArgs[0], ">") {
-			c.WriteResponse(501, EnhancedCode{5, 5, 2}, "Was expecting MAIL arg syntax of FROM:<address>")
+			c.WriteResponse(501, EnhancedCode{5, 5, 2}, "语法错误，期望的格式是 FROM:<address>")
 			return
 		}
 	}
 	from := fromArgs[0]
 	if from == "" {
-		c.WriteResponse(501, EnhancedCode{5, 5, 2}, "Was expecting MAIL arg syntax of FROM:<address>")
+		c.WriteResponse(501, EnhancedCode{5, 5, 2}, "语法错误，期望的格式是 FROM:<address>")
 		return
 	}
 	from = strings.Trim(from, "<>")
 
+	// 参数
 	opts := &MailOptions{}
-
 	c.binarymime = false
-	// This is where the Conn may put BODY=8BITMIME, but we already
-	// read the DATA as bytes, so it does not effect our processing.
 	if len(fromArgs) > 1 {
+		// 解析参数
 		args, err := parseArgs(fromArgs[1:])
 		if err != nil {
-			c.WriteResponse(501, EnhancedCode{5, 5, 4}, "Unable to parse MAIL ESMTP parameters")
+			c.WriteResponse(501, EnhancedCode{5, 5, 4}, "解析 MAIL ESMTP 参数失败")
 			return
 		}
 
+		// 处理参数
 		for key, value := range args {
 			switch key {
 			case "SIZE":
 				size, err := strconv.ParseInt(value, 10, 32)
 				if err != nil {
-					c.WriteResponse(501, EnhancedCode{5, 5, 4}, "Unable to parse SIZE as an integer")
+					c.WriteResponse(501, EnhancedCode{5, 5, 4}, "无法将SIZE解析为一个整数")
 					return
 				}
-
 				if c.server.MaxMessageBytes > 0 && int(size) > c.server.MaxMessageBytes {
-					c.WriteResponse(552, EnhancedCode{5, 3, 4}, "Max message size exceeded")
+					c.WriteResponse(552, EnhancedCode{5, 3, 4}, "SIZE超过了最大消息容量限制")
 					return
 				}
-
 				opts.Size = int(size)
 			case "SMTPUTF8":
 				if !c.server.EnableSMTPUTF8 {
-					c.WriteResponse(504, EnhancedCode{5, 5, 4}, "SMTPUTF8 is not implemented")
+					c.WriteResponse(504, EnhancedCode{5, 5, 4}, "SMTPUTF8 未实现")
 					return
 				}
 				opts.UTF8 = true
 			case "REQUIRETLS":
 				if !c.server.EnableREQUIRETLS {
-					c.WriteResponse(504, EnhancedCode{5, 5, 4}, "REQUIRETLS is not implemented")
+					c.WriteResponse(504, EnhancedCode{5, 5, 4}, "REQUIRETLS 未实现")
 					return
 				}
 				opts.RequireTLS = true
@@ -364,39 +366,40 @@ func (c *Conn) handleMail(arg string) {
 				switch value {
 				case "BINARYMIME":
 					if !c.server.EnableBINARYMIME {
-						c.WriteResponse(504, EnhancedCode{5, 5, 4}, "BINARYMIME is not implemented")
+						c.WriteResponse(504, EnhancedCode{5, 5, 4}, "BINARYMIME 未实现")
 						return
 					}
 					c.binarymime = true
 				case "7BIT", "8BITMIME":
 				default:
-					c.WriteResponse(500, EnhancedCode{5, 5, 4}, "Unknown BODY value")
+					c.WriteResponse(500, EnhancedCode{5, 5, 4}, "未知的 BODY 值")
 					return
 				}
 				opts.Body = BodyType(value)
 			case "AUTH":
-				value, err := decodeXtext(value)
+				value, err = decodeXtext(value)
 				if err != nil {
-					c.WriteResponse(500, EnhancedCode{5, 5, 4}, "Malformed AUTH parameter value")
+					c.WriteResponse(500, EnhancedCode{5, 5, 4}, "解析权限参数失败")
 					return
 				}
 				if !strings.HasPrefix(value, "<") {
-					c.WriteResponse(500, EnhancedCode{5, 5, 4}, "Missing opening angle bracket")
+					c.WriteResponse(500, EnhancedCode{5, 5, 4}, "缺少<符号")
 					return
 				}
 				if !strings.HasSuffix(value, ">") {
-					c.WriteResponse(500, EnhancedCode{5, 5, 4}, "Missing closing angle bracket")
+					c.WriteResponse(500, EnhancedCode{5, 5, 4}, "缺少>符号")
 					return
 				}
 				decodedMbox := value[1 : len(value)-1]
 				opts.Auth = &decodedMbox
 			default:
-				c.WriteResponse(500, EnhancedCode{5, 5, 4}, "Unknown MAIL FROM argument")
+				c.WriteResponse(500, EnhancedCode{5, 5, 4}, "未知是收件人信息")
 				return
 			}
 		}
 	}
 
+	// 处理邮件
 	if err := c.Session().Mail(from, opts); err != nil {
 		if smtpErr, ok := err.(*SMTPError); ok {
 			c.WriteResponse(smtpErr.Code, smtpErr.EnhancedCode, smtpErr.Message)
@@ -406,7 +409,7 @@ func (c *Conn) handleMail(arg string) {
 		return
 	}
 
-	c.WriteResponse(250, EnhancedCode{2, 0, 0}, fmt.Sprintf("Roger, accepting mail from <%v>", from))
+	c.WriteResponse(250, EnhancedCode{2, 0, 0}, fmt.Sprintf("处理 <%v> 发送的邮件成功", from))
 	c.fromReceived = true
 }
 
@@ -461,19 +464,19 @@ func encodeXtext(raw string) string {
 	return out.String()
 }
 
-// MAIL state -> waiting for RCPTs followed by DATA
+// handleRcpt 处理接收到的消息
 func (c *Conn) handleRcpt(arg string) {
 	if !c.fromReceived {
-		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "Missing MAIL FROM command.")
+		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "发件人不能为空")
 		return
 	}
 	if c.bdatPipe != nil {
-		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "RCPT not allowed during message transfer")
+		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "RCPT 不允许数据传输")
 		return
 	}
 
 	if (len(arg) < 4) || (strings.ToUpper(arg[0:3]) != "TO:") {
-		c.WriteResponse(501, EnhancedCode{5, 5, 2}, "Was expecting RCPT arg syntax of TO:<address>")
+		c.WriteResponse(501, EnhancedCode{5, 5, 2}, "语法错误，期望的格式是 TO:<address>")
 		return
 	}
 
@@ -481,7 +484,8 @@ func (c *Conn) handleRcpt(arg string) {
 	recipient := strings.Trim(arg[3:], "<> ")
 
 	if c.server.MaxRecipients > 0 && len(c.recipients) >= c.server.MaxRecipients {
-		c.WriteResponse(552, EnhancedCode{5, 5, 3}, fmt.Sprintf("Maximum limit of %v recipients reached", c.server.MaxRecipients))
+		c.WriteResponse(552, EnhancedCode{5, 5, 3}, fmt.Sprintf("超过最大接收数量限制 %v",
+			c.server.MaxRecipients))
 		return
 	}
 
@@ -494,9 +498,10 @@ func (c *Conn) handleRcpt(arg string) {
 		return
 	}
 	c.recipients = append(c.recipients, recipient)
-	c.WriteResponse(250, EnhancedCode{2, 0, 0}, fmt.Sprintf("I'll make sure <%v> gets this", recipient))
+	c.WriteResponse(250, EnhancedCode{2, 0, 0}, fmt.Sprintf("我会确保 <%v> 接收这条消息", recipient))
 }
 
+// handleAuth 处理权限
 func (c *Conn) handleAuth(arg string) {
 	if c.helo == "" {
 		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "Please introduce yourself first.")
@@ -937,8 +942,9 @@ func (c *Conn) Reject() {
 	c.Close()
 }
 
+// greet 准备建立会话
 func (c *Conn) greet() {
-	c.WriteResponse(220, NoEnhancedCode, fmt.Sprintf("%v ESMTP Service Ready", c.server.Domain))
+	c.WriteResponse(220, NoEnhancedCode, fmt.Sprintf("%v ESMTP 服务已准备就绪", c.server.Domain))
 }
 
 func (c *Conn) WriteResponse(code int, enhCode EnhancedCode, text ...string) {

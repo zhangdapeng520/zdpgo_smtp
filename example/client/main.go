@@ -17,15 +17,14 @@ import (
 
 func main() {
 	// Setup an unencrypted connection to a local mail server.
-	c, err := smtp.Dial("localhost:1025")
+	c, err := smtp.Dial("localhost:3333")
 	if err != nil {
 		panic(err)
 	}
 	defer c.Close()
 
 	// 权限
-	//auth := sasl.NewPlainClient("", "zhangdapeng520", "zhangdapeng520")
-	auth := sasl.NewPlainClient("", "zhangdapeng5201", "zhangdapeng520")
+	auth := sasl.NewPlainClient("", "zhangdapeng520", "zhangdapeng520")
 	err = c.Auth(auth)
 	if err != nil {
 		panic(err)
@@ -33,11 +32,14 @@ func main() {
 
 	// Set the sender and recipient, and send the email all in one step.
 	to := []string{"recipient@example.net"}
-	msg := strings.NewReader("To: recipient@example.net\r\n" +
-		"Subject: discount Gophers!\r\n" +
+
+	// 邮件内容
+	msg := strings.NewReader("To: lxgzhw@163.com\r\n" +
+		"Subject: 这是一封测试邮件\r\n" +
 		"\r\n" +
-		"This is the email body.\r\n")
-	err = c.SendMail("sender@example.org", to, msg)
+		"这是邮件的内容\r\n")
+
+	err = c.SendMail("1156956636@qq.com", to, msg)
 	if err != nil {
 		log.Fatal(err)
 	}

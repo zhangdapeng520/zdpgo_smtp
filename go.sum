@@ -1,4 +1,2 @@
-github.com/zhangdapeng520/zdpgo_smtp/sasl v0.0.0-20200509203442-7bfe0ed36a21 h1:OJyUGMJTzHTd1XQp98QTaHernxMYzRaOasRir9hUlFQ=
-github.com/zhangdapeng520/zdpgo_smtp/sasl v0.0.0-20200509203442-7bfe0ed36a21/go.mod h1:iL2twTeMvZnrg54ZoPDNfJaJaqy0xIQFuBdrLsmspwQ=
-github.com/zhangdapeng520/zdpgo_smtp/smtp v0.15.0 h1:3+hMGMGrqP/lqd7qoxZc1hTU8LY8gHV9RFGWlqSDmP8=
-github.com/zhangdapeng520/zdpgo_smtp/smtp v0.15.0/go.mod h1:qm27SGYgoIPRot6ubfQ/GpiPy/g3PaZAVRxiO/sDUgQ=
+github.com/zhangdapeng520/zdpgo_log v1.3.4 h1:hHB+ELh0zaBe5NLyASTDZ1qFnpkiFcOM582Phen1B7w=
+github.com/zhangdapeng520/zdpgo_log v1.3.4/go.mod h1:Qnr8tZCpmDWqRfJpw0r5ClUNqdOJwLNXIyXA2IGXv6k=

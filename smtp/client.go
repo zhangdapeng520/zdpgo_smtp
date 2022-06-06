@@ -502,20 +502,10 @@ func (c *Client) LMTPData(statusCb func(rcpt string, status *SMTPError)) (io.Wri
 	return &dataCloser{c, c.Text.DotWriter(), statusCb}, nil
 }
 
-// SendMail will use an existing connection to send an email from
-// address from, to addresses to, with message r.
-//
-// This function does not start TLS, nor does it perform authentication. Use
-// StartTLS and Auth before-hand if desirable.
-//
-// The addresses in the to parameter are the SMTP RCPT addresses.
-//
-// The r parameter should be an RFC 822-style email with headers
-// first, a blank line, and then the message body. The lines of r
-// should be CRLF terminated. The r headers should usually include
-// fields such as "From", "To", "Subject", and "Cc".  Sending "Bcc"
-// messages is accomplished by including an email address in the to
-// parameter but not including it in the r headers.
+// SendMail 发送邮件
+// @param from 发件人
+// @param to 收件人
+// @param r 邮件内容
 func (c *Client) SendMail(from string, to []string, r io.Reader) error {
 	var err error
 
