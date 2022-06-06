@@ -1,6 +1,7 @@
 package zdpgo_smtp
 
 import (
+	"errors"
 	"fmt"
 	"github.com/zhangdapeng520/zdpgo_log"
 	"github.com/zhangdapeng520/zdpgo_smtp/smtp"
@@ -86,4 +87,36 @@ func (s *Smtp) Run() error {
 
 	// 返回
 	return nil
+}
+
+func (s *Smtp) GetClient() (*Client, error) {
+	c := &Client{
+		Config: s.Config,
+		Log:    s.Log,
+	}
+
+	// 建立连接
+	if c.Config.Client.Host == "" {
+		c.Config.Client.Host = "127.0.0.1"
+	}
+	if c.Config.Client.Port == 0 {
+		c.Config.Client.Port = 37333
+	}
+	addr := fmt.Sprintf("%s:%d", c.Config.Client.Host, c.Config.Client.Port)
+	smtpClient, err := smtp.Dial(addr)
+	if err != nil {
+		c.Log.Error("与SMTP服务建立连接失败", "error", err)
+		return nil, err
+	}
+	c.SmtpClient = smtpClient
+
+	// 校验权限
+	if !c.Auth() {
+		msg := "权限校验失败，请检查用户名或密码是否正确"
+		c.Log.Error(msg)
+		return nil, errors.New(msg)
+	}
+
+	// 返回
+	return c, nil
 }
