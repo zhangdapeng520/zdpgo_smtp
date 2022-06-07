@@ -22,11 +22,17 @@ type Session struct {
 
 // AuthPlain 用户名和密码校验
 func (s *Session) AuthPlain(username, password string) error {
-	if username != "zhangdapeng520" || password != "zhangdapeng520" {
-		return errors.New("用户名或密码错误")
+	fmt.Println("校验权限：", username, password, gConfig.Auths)
+
+	// 校验权限
+	if auth, ok := gConfig.Auths[username]; ok {
+		if auth.Password == password {
+			return nil
+		}
 	}
-	fmt.Println("权限校验成功", username, password)
-	return nil
+
+	// 校验失败
+	return errors.New("用户名或密码错误")
 }
 
 func (s *Session) Mail(from string, opts *smtp.MailOptions) error {

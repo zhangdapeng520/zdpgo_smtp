@@ -234,7 +234,7 @@ func (c *Conn) protocolError(code int, ec EnhancedCode, msg string) {
 	}
 }
 
-// GREET state -> waiting for HELO
+// 处理打招呼
 func (c *Conn) handleGreet(enhanced bool, arg string) {
 	domain, err := parseHelloArgument(arg)
 	if err != nil {
@@ -947,8 +947,8 @@ func (c *Conn) greet() {
 	c.WriteResponse(220, NoEnhancedCode, fmt.Sprintf("%v ESMTP 服务已准备就绪", c.server.Domain))
 }
 
+// WriteResponse 写入响应
 func (c *Conn) WriteResponse(code int, enhCode EnhancedCode, text ...string) {
-	// TODO: error handling
 	if c.server.WriteTimeout != 0 {
 		c.conn.SetWriteDeadline(time.Now().Add(c.server.WriteTimeout))
 	}
@@ -975,14 +975,13 @@ func (c *Conn) WriteResponse(code int, enhCode EnhancedCode, text ...string) {
 	}
 }
 
-// Reads a line of input
+// ReadLine 读取一行 输入
 func (c *Conn) ReadLine() (string, error) {
 	if c.server.ReadTimeout != 0 {
 		if err := c.conn.SetReadDeadline(time.Now().Add(c.server.ReadTimeout)); err != nil {
 			return "", err
 		}
 	}
-
 	return c.text.ReadLine()
 }
 

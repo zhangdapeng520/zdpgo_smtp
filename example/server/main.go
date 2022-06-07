@@ -15,7 +15,7 @@ import (
 func main() {
 	s := zdpgo_smtp.NewWitchConfig(&zdpgo_smtp.Config{
 		Debug: true,
-		Server: zdpgo_smtp.HttpInfo{
+		Server: zdpgo_smtp.ServerInfo{
 			Port: 3333,
 		},
 	})

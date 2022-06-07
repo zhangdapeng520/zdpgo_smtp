@@ -51,8 +51,20 @@ func NewWitchConfig(config *Config) *Smtp {
 	s.Server.AllowInsecureAuth = true
 	s.Server.Debug = os.Stdout
 
+	// 权限
+	if config.Auths == nil {
+		config.Auths = make(map[string]Auth)
+	}
+	if len(config.Auths) == 0 {
+		config.Auths["zhangdapeng520"] = Auth{
+			Username: "zhangdapeng520",
+			Password: "zhangdapeng520",
+		}
+	}
+
 	// 配置
 	s.Config = config
+	gConfig = config
 
 	// 返回
 	return s

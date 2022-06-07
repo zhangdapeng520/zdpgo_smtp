@@ -9,10 +9,16 @@ package zdpgo_smtp
 */
 
 type Config struct {
-	Debug       bool       `yaml:"debug" json:"debug"`
-	LogFilePath string     `yaml:"log_file_path" json:"log_file_path"`
-	Server      ServerInfo `yaml:"server" json:"server"`
-	Client      ClientInfo `yaml:"client" json:"client"`
+	Debug       bool            `yaml:"debug" json:"debug"`
+	LogFilePath string          `yaml:"log_file_path" json:"log_file_path"`
+	Server      ServerInfo      `yaml:"server" json:"server"`
+	Client      ClientInfo      `yaml:"client" json:"client"`
+	Auths       map[string]Auth `yaml:"auths" json:"auths"`
+}
+
+type Auth struct {
+	Username string `yaml:"username" json:"username"`
+	Password string `yaml:"password" json:"password"`
 }
 
 type ServerInfo struct {

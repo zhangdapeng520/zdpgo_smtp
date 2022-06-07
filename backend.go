@@ -10,8 +10,9 @@ import "github.com/zhangdapeng520/zdpgo_smtp/smtp"
 @Description:
 */
 
-// 后台实现
-type Backend struct{}
+// Backend 后台实现
+type Backend struct {
+}
 
 func (bkd *Backend) NewSession(c smtp.ConnectionState) (smtp.Session, error) {
 	return &Session{}, nil
