@@ -36,27 +36,38 @@ func (s *Session) AuthPlain(username, password string) error {
 }
 
 func (s *Session) Mail(from string, opts *smtp.MailOptions) error {
-	fmt.Println("发件人是：", from)
+	gMessage.From = from
 	return nil
 }
 
 func (s *Session) Rcpt(to string) error {
-	fmt.Println("收件人是：", to)
+	gMessage.To = to
 	return nil
 }
 
 func (s *Session) Data(r io.Reader) error {
+	// 读取客户端数据
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
-		panic(err)
+		Log.Error("读取客户端数据失败", "error", err)
+		return err
 	}
-	fmt.Println("接收到的数据是：", string(data))
+
+	// 解析客户端数据
+	err = gMessage.ParseString(string(data))
+	if err != nil {
+		Log.Error("解析客户端数据失败", "error", err)
+		return err
+	}
+	Log.Debug("解析数据成功", "msg", gMessage)
 	return nil
 }
 
 func (s *Session) Reset() {
+	gMessage = &Message{}
 }
 
 func (s *Session) Logout() error {
+	gMessage = &Message{}
 	return nil
 }

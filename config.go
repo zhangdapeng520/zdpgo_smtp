@@ -14,6 +14,12 @@ type Config struct {
 	Server      ServerInfo      `yaml:"server" json:"server"`
 	Client      ClientInfo      `yaml:"client" json:"client"`
 	Auths       map[string]Auth `yaml:"auths" json:"auths"`
+	Cache       CacheConfig     `yaml:"cache" json:"cache"`
+}
+
+type CacheConfig struct {
+	Host string `yaml:"host" json:"host"`
+	Port int    `yaml:"port" json:"port"`
 }
 
 type Auth struct {

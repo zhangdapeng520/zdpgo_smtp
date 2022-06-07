@@ -3,6 +3,8 @@ package zdpgo_smtp
 import (
 	"errors"
 	"fmt"
+	"github.com/zhangdapeng520/zdpgo_cache_http"
+	"github.com/zhangdapeng520/zdpgo_json"
 	"github.com/zhangdapeng520/zdpgo_log"
 	"github.com/zhangdapeng520/zdpgo_smtp/smtp"
 	"os"
@@ -22,8 +24,8 @@ type Smtp struct {
 	Log    *zdpgo_log.Log
 }
 
-func New() {
-
+func New() *Smtp {
+	return NewWitchConfig(&Config{})
 }
 
 func NewWitchConfig(config *Config) *Smtp {
@@ -34,6 +36,7 @@ func NewWitchConfig(config *Config) *Smtp {
 		config.LogFilePath = "logs/zdpgo/zdpgo_smtp.log"
 	}
 	s.Log = zdpgo_log.NewWithDebug(config.Debug, config.LogFilePath)
+	Log = s.Log
 
 	// 服务
 	s.Server = smtp.NewServer(&Backend{})
@@ -62,6 +65,17 @@ func NewWitchConfig(config *Config) *Smtp {
 		}
 	}
 
+	// 缓存
+	if config.Cache.Host == "" {
+		config.Cache.Host = "127.0.0.1"
+	}
+	if config.Cache.Port == 0 {
+		config.Cache.Port = 37334
+	}
+
+	// json对象
+	Json = zdpgo_json.New()
+
 	// 配置
 	s.Config = config
 	gConfig = config
@@ -70,7 +84,48 @@ func NewWitchConfig(config *Config) *Smtp {
 	return s
 }
 
+// RunCache 运行缓存服务
+func (s *Smtp) RunCache() error {
+	cache := zdpgo_cache_http.NewWithConfig(&zdpgo_cache_http.Config{
+		Debug: s.Config.Debug,
+		Server: zdpgo_cache_http.HttpInfo{
+			Host: s.Config.Cache.Host,
+			Port: s.Config.Cache.Port,
+		},
+	})
+	err := cache.Run()
+	if err != nil {
+		s.Log.Error("启动缓存服务失败", "error", err)
+		return err
+	}
+	return nil
+}
+
+// GetCacheClient 获取缓存客户端对象
+func (s *Smtp) GetCacheClient() *zdpgo_cache_http.Client {
+	cache := zdpgo_cache_http.NewWithConfig(&zdpgo_cache_http.Config{
+		Debug: s.Config.Debug,
+		Client: zdpgo_cache_http.HttpInfo{
+			Port: s.Config.Cache.Port,
+		},
+	})
+
+	// 获取客户端
+	client := cache.GetClient()
+
+	// 返回客户端对象
+	return client
+}
+
 func (s *Smtp) Run() error {
+	// 运行缓存服务
+	go func() {
+		err := s.RunCache()
+		if err != nil {
+			s.Log.Error("运行缓存服务失败", "error", err)
+		}
+	}()
+
 	// 创建服务
 	if s.Server == nil {
 		s.Server = smtp.NewServer(&Backend{})
@@ -101,6 +156,7 @@ func (s *Smtp) Run() error {
 	return nil
 }
 
+// GetClient 获取SMTP服务客户端
 func (s *Smtp) GetClient() (*Client, error) {
 	c := &Client{
 		Config: s.Config,

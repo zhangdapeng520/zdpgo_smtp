@@ -1,5 +1,10 @@
 package zdpgo_smtp
 
+import (
+	"github.com/zhangdapeng520/zdpgo_json"
+	"github.com/zhangdapeng520/zdpgo_log"
+)
+
 /*
 @Time : 2022/6/7 17:08
 @Author : 张大鹏
@@ -9,5 +14,8 @@ package zdpgo_smtp
 */
 
 var (
-	gConfig *Config
+	gConfig  *Config
+	Log      *zdpgo_log.Log
+	Json     *zdpgo_json.Json
+	gMessage = &Message{}
 )
