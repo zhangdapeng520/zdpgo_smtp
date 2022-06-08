@@ -3,7 +3,6 @@ package zdpgo_smtp
 import (
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"mime"
 	"regexp"
 	"strings"
@@ -26,15 +25,6 @@ type Message struct {
 	Time        int               `json:"time"`
 	Author      string            `json:"author"` // zdpgo_email发过来的唯一标识
 	Attachments map[string][]byte `json:"attachments"`
-}
-
-// ToReader 转换为读取流
-func (m *Message) ToReader() *strings.Reader {
-	data := fmt.Sprintf(
-		"To: %s\r\nSubject: %s\r\n\r\n%s\r\n",
-		strings.Join(m.To, ","), m.Subject, m.Body,
-	)
-	return strings.NewReader(data)
 }
 
 // ParseString 解析字符串

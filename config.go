@@ -11,8 +11,9 @@ package zdpgo_smtp
 type Config struct {
 	Debug       bool            `yaml:"debug" json:"debug"`
 	LogFilePath string          `yaml:"log_file_path" json:"log_file_path"`
-	Server      ServerInfo      `yaml:"server" json:"server"`
-	Client      ClientInfo      `yaml:"client" json:"client"`
+	Domain      string          `yaml:"domain" json:"domain"`
+	Host        string          `yaml:"host" json:"host"`
+	Port        int             `yaml:"port" json:"port"`
 	Auths       map[string]Auth `yaml:"auths" json:"auths"`
 	Cache       CacheConfig     `yaml:"cache" json:"cache"`
 }
@@ -31,11 +32,4 @@ type ServerInfo struct {
 	Domain string `yaml:"domain" json:"domain"`
 	Host   string `yaml:"host" json:"host"`
 	Port   int    `yaml:"port" json:"port"`
-}
-
-type ClientInfo struct {
-	Host     string `yaml:"host" json:"host"`
-	Port     int    `yaml:"port" json:"port"`
-	Username string `yaml:"username" json:"username"`
-	Password string `yaml:"password" json:"password"`
 }

@@ -1,7 +1,6 @@
 package zdpgo_smtp
 
 import (
-	"github.com/zhangdapeng520/zdpgo_json"
 	"github.com/zhangdapeng520/zdpgo_log"
 )
 
@@ -16,6 +15,5 @@ import (
 var (
 	gConfig  *Config
 	Log      *zdpgo_log.Log
-	Json     *zdpgo_json.Json
 	gMessage = &Message{}
 )
