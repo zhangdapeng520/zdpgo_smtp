@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// 解析命令
 func parseCmd(line string) (cmd string, arg string, err error) {
 	line = strings.TrimRight(line, "\r\n")
 
@@ -15,7 +16,7 @@ func parseCmd(line string) (cmd string, arg string, err error) {
 	case l == 0:
 		return "", "", nil
 	case l < 4:
-		return "", "", fmt.Errorf("Command too short: %q", line)
+		return "", "", fmt.Errorf("命令太短了: %q", line)
 	case l == 4:
 		return strings.ToUpper(line), "", nil
 	case l == 5:
@@ -34,11 +35,7 @@ func parseCmd(line string) (cmd string, arg string, err error) {
 	return strings.ToUpper(line[0:4]), strings.Trim(line[5:], " \n\r"), nil
 }
 
-// Takes the arguments proceeding a command and files them
-// into a map[string]string after uppercasing each key.  Sample arg
-// string:
-//		" BODY=8BITMIME SIZE=1024 SMTPUTF8"
-// The leading space is mandatory.
+// 解析参数
 func parseArgs(args []string) (map[string]string, error) {
 	argMap := map[string]string{}
 	for _, arg := range args {
@@ -52,7 +49,7 @@ func parseArgs(args []string) (map[string]string, error) {
 		case 1:
 			argMap[strings.ToUpper(m[0])] = ""
 		default:
-			return nil, fmt.Errorf("Failed to parse arg string: %q", arg)
+			return nil, fmt.Errorf("解析参数字符串失败: %q", arg)
 		}
 	}
 	return argMap, nil
@@ -64,7 +61,7 @@ func parseHelloArgument(arg string) (string, error) {
 		domain = arg[:idx]
 	}
 	if domain == "" {
-		return "", fmt.Errorf("Invalid domain")
+		return "", fmt.Errorf("domain域名不能为空")
 	}
 	return domain, nil
 }

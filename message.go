@@ -1,9 +1,11 @@
 package zdpgo_smtp
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"mime"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -17,12 +19,13 @@ import (
 */
 
 type Message struct {
-	From    string   `json:"from"`
-	To      []string `json:"to"`
-	Subject string   `json:"subject"`
-	Body    string   `json:"body"`
-	Time    int      `json:"time"`
-	Author  string   `json:"author"` // zdpgo_email发过来的唯一标识
+	From        string            `json:"from"`
+	To          []string          `json:"to"`
+	Subject     string            `json:"subject"`
+	Body        string            `json:"body"`
+	Time        int               `json:"time"`
+	Author      string            `json:"author"` // zdpgo_email发过来的唯一标识
+	Attachments map[string][]byte `json:"attachments"`
 }
 
 // ToReader 转换为读取流
@@ -44,8 +47,7 @@ func (m *Message) ParseString(data string) error {
 	}
 
 	// 处理请求头
-	fmt.Println("==============开始=======================")
-	fmt.Println(dataArr[0])
+	m.Time = int(time.Now().Unix())
 	headerArr := strings.Split(dataArr[0], "\r\n")
 	for _, v := range headerArr {
 		if strings.HasPrefix(v, "To:") {
@@ -74,18 +76,45 @@ func (m *Message) ParseString(data string) error {
 			}
 			m.Subject = title
 		}
-		fmt.Println("请求头：", v)
 	}
-	fmt.Println("==============内容=======================")
-	fmt.Println(dataArr[1])
-	m.Body = strings.TrimSpace(dataArr[1])
-	fmt.Println("==============结束=======================")
 
-	//// 提取字符串
-	//m.To = strings.Replace(dataArr[0], "To: ", "", 1)
-	//m.Subject = strings.Replace(dataArr[1], "Subject: ", "", 1)
-	//m.Body = strings.TrimSpace(dataArr[3])
-	m.Time = int(time.Now().Unix())
+	// 内容：用--切割，第一部分不为空字符串，且第二部分能找不到文件名
+	var (
+		fileName string
+		content  []byte
+		err      error
+	)
+	for i := 1; i < len(dataArr); i++ {
+		dataStr := dataArr[i]
+		newDataArr := strings.Split(dataStr, "--")
+
+		// 无意义的内容
+		if newDataArr[0] == "" {
+			continue
+		}
+
+		// 提取内容和附件
+		if len(newDataArr) >= 2 {
+			// 找文件内容
+			if fileName != "" {
+				content, err = m.ParseFileContent(newDataArr[0])
+				if err != nil {
+					continue
+				}
+				if m.Attachments == nil {
+					m.Attachments = make(map[string][]byte)
+				}
+				m.Attachments[fileName] = content
+			}
+
+			// 找文件名
+			fileName, err = m.ParseFileName(newDataArr[1])
+			if newDataArr[0] != "" && m.Body == "" {
+				m.Body = strings.TrimSpace(newDataArr[0])
+				continue
+			}
+		}
+	}
 
 	// 返回
 	return nil
@@ -100,4 +129,33 @@ func (m *Message) ParseTitle(title string) (string, error) {
 		return "", err
 	}
 	return result, nil
+}
+
+// ParseFileName 解析文件名
+func (m *Message) ParseFileName(dataStr string) (string, error) {
+	regexCompile := regexp.MustCompile(`.*?filename="(.*?)".*?`)
+	results := regexCompile.FindStringSubmatch(dataStr)
+	if len(results) < 2 {
+		return "", errors.New("提取文件名失败")
+	}
+	return results[1], nil
+}
+
+// ParseFileContent 解析文件内容
+func (m *Message) ParseFileContent(dataStr string) ([]byte, error) {
+	// 分割数据内容
+	if strings.Contains(dataStr, "--") {
+		dataArr := strings.Split(dataStr, "--")
+		dataStr = dataArr[0]
+	}
+
+	// 提取数据内容
+	decodeBytes, err := base64.StdEncoding.DecodeString(strings.TrimSpace(dataStr))
+	if err != nil {
+		Log.Error("base64解码文件内容失败", "error", err)
+		return nil, err
+	}
+
+	// 返回
+	return decodeBytes, nil
 }

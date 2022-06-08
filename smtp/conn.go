@@ -664,23 +664,23 @@ func (c *Conn) handleData(arg string) {
 func (c *Conn) handleBdat(arg string) {
 	args := strings.Fields(arg)
 	if len(args) == 0 {
-		c.WriteResponse(501, EnhancedCode{5, 5, 4}, "Missing chunk size argument")
+		c.WriteResponse(501, EnhancedCode{5, 5, 4}, "缺少chunk size参数")
 		return
 	}
 	if len(args) > 2 {
-		c.WriteResponse(501, EnhancedCode{5, 5, 4}, "Too many arguments")
+		c.WriteResponse(501, EnhancedCode{5, 5, 4}, "参数过多")
 		return
 	}
 
 	if !c.fromReceived || len(c.recipients) == 0 {
-		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "Missing RCPT TO command.")
+		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "缺少RCPT TO命令")
 		return
 	}
 
 	last := false
 	if len(args) == 2 {
 		if !strings.EqualFold(args[1], "LAST") {
-			c.WriteResponse(501, EnhancedCode{5, 5, 4}, "Unknown BDAT argument")
+			c.WriteResponse(501, EnhancedCode{5, 5, 4}, "未知的 BDAT 参数")
 			return
 		}
 		last = true
@@ -694,7 +694,7 @@ func (c *Conn) handleBdat(arg string) {
 	}
 
 	if c.server.MaxMessageBytes != 0 && c.bytesReceived+int(size) > c.server.MaxMessageBytes {
-		c.WriteResponse(552, EnhancedCode{5, 3, 4}, "Max message size exceeded")
+		c.WriteResponse(552, EnhancedCode{5, 3, 4}, "超过最大消息长度限制")
 
 		// Discard chunk itself without passing it to backend.
 		io.Copy(ioutil.Discard, io.LimitReader(c.text.R, int64(size)))
@@ -795,12 +795,12 @@ func (c *Conn) handleBdat(arg string) {
 
 // ErrDataReset is returned by Reader pased to Data function if client does not
 // send another BDAT command and instead closes connection or issues RSET command.
-var ErrDataReset = errors.New("smtp: message transmission aborted")
+var ErrDataReset = errors.New("smtp: 消息传输失败")
 
 var errPanic = &SMTPError{
 	Code:         421,
 	EnhancedCode: EnhancedCode{4, 0, 0},
-	Message:      "Internal server error",
+	Message:      "服务器内部错误",
 }
 
 func (c *Conn) handlePanic(err interface{}, status *statusCollector) {

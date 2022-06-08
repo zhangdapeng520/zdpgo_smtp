@@ -45,25 +45,11 @@ type Server struct {
 	ErrorLog          Logger
 	ReadTimeout       time.Duration
 	WriteTimeout      time.Duration
-
-	// Advertise SMTPUTF8 (RFC 6531) capability.
-	// Should be used only if backend supports it.
-	EnableSMTPUTF8 bool
-
-	// Advertise REQUIRETLS (RFC 8689) capability.
-	// Should be used only if backend supports it.
-	EnableREQUIRETLS bool
-
-	// Advertise BINARYMIME (RFC 3030) capability.
-	// Should be used only if backend supports it.
-	EnableBINARYMIME bool
-
-	// If set, the AUTH command will not be advertised and authentication
-	// attempts will be rejected. This setting overrides AllowInsecureAuth.
-	AuthDisabled bool
-
-	// The server backend.
-	Backend Backend
+	EnableSMTPUTF8    bool // 是否开启UTF-8
+	EnableREQUIRETLS  bool
+	EnableBINARYMIME  bool
+	AuthDisabled      bool
+	Backend           Backend
 
 	caps  []string
 	auths map[string]SaslServerFactory
@@ -77,7 +63,6 @@ type Server struct {
 // NewServer 创建新的SMT服务
 func NewServer(be Backend) *Server {
 	return &Server{
-		// Doubled maximum line length per RFC 5321 (Section 4.5.3.1.6)
 		MaxLineLength: 2000,
 
 		Backend:  be,
@@ -110,8 +95,7 @@ func (s *Server) Serve(l net.Listener) error {
 	s.listeners = append(s.listeners, l)
 	s.locker.Unlock()
 
-	var tempDelay time.Duration // how long to sleep on accept failure
-
+	var tempDelay time.Duration
 	for {
 		c, err := l.Accept()
 		if err != nil {
@@ -129,7 +113,7 @@ func (s *Server) Serve(l net.Listener) error {
 				if max := 1 * time.Second; tempDelay > max {
 					tempDelay = max
 				}
-				s.ErrorLog.Printf("accept error: %s; retrying in %s", err, tempDelay)
+				s.ErrorLog.Printf("接收数据失败: %s; 在 %s 后重试", err, tempDelay)
 				time.Sleep(tempDelay)
 				continue
 			}
@@ -178,7 +162,7 @@ func (s *Server) handleConn(c *Conn) error {
 		if err == nil {
 			cmd, arg, err := parseCmd(line)
 			if err != nil {
-				c.protocolError(501, EnhancedCode{5, 5, 2}, "Bad command")
+				c.protocolError(501, EnhancedCode{5, 5, 2}, "命令错误")
 				continue
 			}
 
@@ -188,16 +172,16 @@ func (s *Server) handleConn(c *Conn) error {
 				return nil
 			}
 			if err == ErrTooLongLine {
-				c.WriteResponse(500, EnhancedCode{5, 4, 0}, "Too long line, closing connection")
+				c.WriteResponse(500, EnhancedCode{5, 4, 0}, "一行太长了，关闭连接")
 				return nil
 			}
 
 			if neterr, ok := err.(net.Error); ok && neterr.Timeout() {
-				c.WriteResponse(221, EnhancedCode{2, 4, 2}, "Idle timeout, bye bye")
+				c.WriteResponse(221, EnhancedCode{2, 4, 2}, "Idle超时，再见")
 				return nil
 			}
 
-			c.WriteResponse(221, EnhancedCode{2, 4, 0}, "Connection error, sorry")
+			c.WriteResponse(221, EnhancedCode{2, 4, 0}, "连接错误，抱歉")
 			return err
 		}
 	}
@@ -246,7 +230,7 @@ func (s *Server) ListenAndServeTLS() error {
 func (s *Server) Close() error {
 	select {
 	case <-s.done:
-		return errors.New("smtp: server already closed")
+		return errors.New("smtp: 服务已关闭")
 	default:
 		close(s.done)
 	}

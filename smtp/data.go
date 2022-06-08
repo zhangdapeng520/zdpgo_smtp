@@ -63,6 +63,7 @@ func newDataReader(c *Conn) *dataReader {
 	return dr
 }
 
+// 读取数据
 func (r *dataReader) Read(b []byte) (n int, err error) {
 	if r.limited {
 		if r.n <= 0 {
