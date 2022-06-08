@@ -474,21 +474,19 @@ func (c *Conn) handleRcpt(arg string) {
 		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "RCPT 不允许数据传输")
 		return
 	}
-
 	if (len(arg) < 4) || (strings.ToUpper(arg[0:3]) != "TO:") {
 		c.WriteResponse(501, EnhancedCode{5, 5, 2}, "语法错误，期望的格式是 TO:<address>")
 		return
 	}
 
-	// TODO: This trim is probably too forgiving
 	recipient := strings.Trim(arg[3:], "<> ")
-
 	if c.server.MaxRecipients > 0 && len(c.recipients) >= c.server.MaxRecipients {
 		c.WriteResponse(552, EnhancedCode{5, 5, 3}, fmt.Sprintf("超过最大接收数量限制 %v",
 			c.server.MaxRecipients))
 		return
 	}
 
+	// 会话处理接收到的消息
 	if err := c.Session().Rcpt(recipient); err != nil {
 		if smtpErr, ok := err.(*SMTPError); ok {
 			c.WriteResponse(smtpErr.Code, smtpErr.EnhancedCode, smtpErr.Message)
@@ -498,28 +496,30 @@ func (c *Conn) handleRcpt(arg string) {
 		return
 	}
 	c.recipients = append(c.recipients, recipient)
+
+	// 正确的消息
 	c.WriteResponse(250, EnhancedCode{2, 0, 0}, fmt.Sprintf("我会确保 <%v> 接收这条消息", recipient))
 }
 
 // handleAuth 处理权限
 func (c *Conn) handleAuth(arg string) {
 	if c.helo == "" {
-		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "Please introduce yourself first.")
+		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "请先介绍您自己")
 		return
 	}
 	if c.didAuth {
-		c.WriteResponse(503, EnhancedCode{5, 5, 1}, "Already authenticated")
+		c.WriteResponse(503, EnhancedCode{5, 5, 1}, "权限已经校验过")
 		return
 	}
 
 	parts := strings.Fields(arg)
 	if len(parts) == 0 {
-		c.WriteResponse(502, EnhancedCode{5, 5, 4}, "Missing parameter")
+		c.WriteResponse(502, EnhancedCode{5, 5, 4}, "缺少参数")
 		return
 	}
 
 	if _, isTLS := c.TLSConnectionState(); !isTLS && !c.server.AllowInsecureAuth {
-		c.WriteResponse(523, EnhancedCode{5, 7, 10}, "TLS is required")
+		c.WriteResponse(523, EnhancedCode{5, 7, 10}, "需要TLS")
 		return
 	}
 
@@ -587,6 +587,7 @@ func (c *Conn) handleAuth(arg string) {
 	c.didAuth = true
 }
 
+// 处理TLS
 func (c *Conn) handleStartTLS() {
 	if _, isTLS := c.TLSConnectionState(); isTLS {
 		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "Already running in TLS")
@@ -624,31 +625,30 @@ func (c *Conn) handleStartTLS() {
 	c.reset()
 }
 
-// DATA
+// 处理数据
 func (c *Conn) handleData(arg string) {
 	if arg != "" {
-		c.WriteResponse(501, EnhancedCode{5, 5, 4}, "DATA command should not have any arguments")
+		c.WriteResponse(501, EnhancedCode{5, 5, 4}, "参数不能为空")
 		return
 	}
 	if c.bdatPipe != nil {
-		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "DATA not allowed during message transfer")
+		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "不允许数据传输")
 		return
 	}
 	if c.binarymime {
-		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "DATA not allowed for BINARYMIME messages")
+		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "不支持BINARYMIME类型的消息")
 		return
 	}
 
 	if !c.fromReceived || len(c.recipients) == 0 {
-		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "Missing RCPT TO command.")
+		c.WriteResponse(502, EnhancedCode{5, 5, 1}, "缺少 RCPT TO 命令")
 		return
 	}
 
 	// We have recipients, go to accept data
-	c.WriteResponse(354, EnhancedCode{2, 0, 0}, "Go ahead. End your data with <CR><LF>.<CR><LF>")
+	c.WriteResponse(354, EnhancedCode{2, 0, 0}, "接收到数据。以以下方式结束数据 <CR><LF>.<CR><LF>")
 
 	defer c.reset()
-
 	if c.server.LMTP {
 		c.handleDataLMTP()
 		return

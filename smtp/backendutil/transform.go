@@ -6,10 +6,9 @@ import (
 	"github.com/zhangdapeng520/zdpgo_smtp/smtp"
 )
 
-// TransformBackend is a backend that transforms messages.
+// TransformBackend 消息转换后端
 type TransformBackend struct {
-	Backend smtp.Backend
-
+	Backend       smtp.Backend
 	TransformMail func(from string) (string, error)
 	TransformRcpt func(to string) (string, error)
 	TransformData func(r io.Reader) (io.Reader, error)
@@ -25,8 +24,7 @@ func (be *TransformBackend) NewSession(c smtp.ConnectionState) (smtp.Session, er
 
 type transformSession struct {
 	Session smtp.Session
-
-	be *TransformBackend
+	be      *TransformBackend
 }
 
 func (s *transformSession) Reset() {

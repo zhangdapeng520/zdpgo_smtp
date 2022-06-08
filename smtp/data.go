@@ -43,13 +43,13 @@ var ErrDataTooLarge = &SMTPError{
 }
 
 type dataReader struct {
-	r     *bufio.Reader
-	state int
-
+	r       *bufio.Reader
+	state   int
 	limited bool
 	n       int64 // Maximum bytes remaining
 }
 
+// newDataReader 构建新的数据读取器
 func newDataReader(c *Conn) *dataReader {
 	dr := &dataReader{
 		r: c.text.R,

@@ -20,10 +20,12 @@ type Client struct {
 	SmtpClient *smtp.Client
 }
 
+// SendRequest SMTP发送请求对象
 type SendRequest struct {
-	From string   `json:"from"`
-	To   []string `json:"to"`
-	Msg  Message  `json:"msg"`
+	From  string            `json:"from"`
+	To    []string          `json:"to"`
+	Msg   Message           `json:"msg"`
+	Files map[string][]byte `json:"files"`
 }
 
 // Auth 权限校验

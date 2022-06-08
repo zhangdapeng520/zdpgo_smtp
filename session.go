@@ -6,6 +6,7 @@ import (
 	"github.com/zhangdapeng520/zdpgo_smtp/smtp"
 	"io"
 	"io/ioutil"
+	"strings"
 )
 
 /*
@@ -41,7 +42,7 @@ func (s *Session) Mail(from string, opts *smtp.MailOptions) error {
 }
 
 func (s *Session) Rcpt(to string) error {
-	gMessage.To = to
+	gMessage.To = strings.Split(to, ",")
 	return nil
 }
 
