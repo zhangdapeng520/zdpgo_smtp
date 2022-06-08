@@ -3,6 +3,7 @@ package zdpgo_smtp
 import (
 	"fmt"
 	"github.com/zhangdapeng520/zdpgo_cache_http"
+	"github.com/zhangdapeng520/zdpgo_email"
 	"github.com/zhangdapeng520/zdpgo_log"
 	"github.com/zhangdapeng520/zdpgo_smtp/smtp"
 	"os"
@@ -149,4 +150,49 @@ func (s *Smtp) Run() error {
 
 	// 返回
 	return nil
+}
+
+// GetClient 获取客户端
+func (s *Smtp) GetClient() (*Client, error) {
+
+	// 客户端配置
+	if s.Config.Client.Email == "" {
+		s.Config.Client.Email = "zhangdapeng520@zhangdapeng520.com"
+	}
+	if s.Config.Client.Username == "" {
+		s.Config.Client.Username = "zhangdapeng520"
+	}
+	if s.Config.Client.Password == "" {
+		s.Config.Client.Password = "zhangdapeng520"
+	}
+	if s.Config.Client.Host == "" {
+		s.Config.Client.Host = "127.0.0.1"
+	}
+	if s.Config.Client.Port == 0 {
+		s.Config.Client.Port = 37333
+	}
+	if s.Config.Client.Cache.Host == "" {
+		s.Config.Client.Cache.Host = "127.0.0.1"
+	}
+	if s.Config.Client.Cache.Port == 0 {
+		s.Config.Client.Cache.Port = 37334
+	}
+
+	// 邮件
+	e, err := zdpgo_email.NewWithConfig(&zdpgo_email.Config{
+		Debug:    s.Config.Debug,
+		Email:    s.Config.Client.Email,
+		Username: s.Config.Client.Username,
+		Password: s.Config.Client.Password,
+		Host:     s.Config.Client.Host,
+		Port:     s.Config.Client.Port,
+		IsSSL:    false,
+	})
+
+	// 客户端
+	return &Client{
+		Config: s.Config,
+		Email:  e,
+		Log:    s.Log,
+	}, err
 }

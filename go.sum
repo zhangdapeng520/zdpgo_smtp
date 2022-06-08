@@ -1,5 +1,7 @@
 github.com/zhangdapeng520/zdpgo_cache_http v0.1.0 h1:wuIETz8vmVhMyma/0AlzBDflq1rmFRmiekD7eTQY+S8=
 github.com/zhangdapeng520/zdpgo_cache_http v0.1.0/go.mod h1:uDb8GjZOpyQCLhhDadFYaEum5eJ7Kv+Koqs5LO3jz2E=
+github.com/zhangdapeng520/zdpgo_email v1.1.1 h1:y+SghxUdQ1wANlfp9+0036OIvOj6mMMgscVFYvm2s3k=
+github.com/zhangdapeng520/zdpgo_email v1.1.1/go.mod h1:P+oFGl0bVVcMemlRZEm2k3ycf0c6ZRKRxUHZzt6y0LM=
 github.com/zhangdapeng520/zdpgo_file v1.0.3 h1:i4gPenWPVnqRAQP/w1KT9hfnD1//8E0dy5vU8lrTdZE=
 github.com/zhangdapeng520/zdpgo_file v1.0.3/go.mod h1:0BmzUnjfq8hpdH9IsiXQvoygwDaV6/UoTxipgvwAa9g=
 github.com/zhangdapeng520/zdpgo_json v0.1.2 h1:E5Zf0VpTFZP5VrVGQqp7nvYsOQhDhIg2vQEkjldwlJc=
@@ -10,3 +12,7 @@ github.com/zhangdapeng520/zdpgo_random v1.1.5 h1:o5CKy54t6oAlt612p6QK+R8oeIOwacD
 github.com/zhangdapeng520/zdpgo_random v1.1.5/go.mod h1:tSy7XqzYOw0h3O/FRLmfYUft/CMYd8JUpRH4yh/5Glw=
 github.com/zhangdapeng520/zdpgo_requests v0.4.3 h1:dGy6Q8ULmBYH5NJ8xXyme1Ewo96GcYfEljexrrr5so8=
 github.com/zhangdapeng520/zdpgo_requests v0.4.3/go.mod h1:EItnId/Mz7hrA4Jk2T21R583TuR4WPi6hh73cnHTaD0=
+github.com/zhangdapeng520/zdpgo_yaml v0.1.0 h1:tIbAnMXH/voigfAjNiclM4nlQcbZzutNlI5Jk+37tjE=
+github.com/zhangdapeng520/zdpgo_yaml v0.1.0/go.mod h1:bsPOffw0/qvTmaukVBeZe/Mvui9fxa9+0sbhzB/04Ls=
+gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc h1:2gGKlE2+asNV9m7xrywl36YYNnBG5ZQ0r/BOOxqPpmk=
+gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc/go.mod h1:m7x9LTH6d71AHyAX77c9yqWCCa3UKHcVEj9y7hAtKDk=

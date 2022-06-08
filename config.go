@@ -16,6 +16,16 @@ type Config struct {
 	Port        int             `yaml:"port" json:"port"`
 	Auths       map[string]Auth `yaml:"auths" json:"auths"`
 	Cache       CacheConfig     `yaml:"cache" json:"cache"`
+	Client      ClientConfig    `yaml:"client" json:"client"`
+}
+
+type ClientConfig struct {
+	Email    string      `yaml:"email" json:"email"`
+	Username string      `yaml:"username" json:"username"`
+	Password string      `yaml:"password" json:"password"`
+	Host     string      `yaml:"host" json:"host"`
+	Port     int         `yaml:"port" json:"port"`
+	Cache    CacheConfig `yaml:"cache" json:"cache"`
 }
 
 type CacheConfig struct {

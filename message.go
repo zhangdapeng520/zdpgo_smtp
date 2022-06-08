@@ -23,8 +23,8 @@ type Message struct {
 	Subject     string            `json:"subject"`
 	Body        string            `json:"body"`
 	Time        int               `json:"time"`
-	Author      string            `json:"author"` // zdpgo_email发过来的唯一标识
-	Attachments map[string][]byte `json:"attachments"`
+	Author      string            `json:"author"`      // zdpgo_email发过来的唯一标识
+	Attachments map[string]string `json:"attachments"` // 文件名：文件内容的base64字符串
 }
 
 // ParseString 解析字符串
@@ -50,12 +50,8 @@ func (m *Message) ParseString(data string) error {
 			}
 			m.To = toResult
 		} else if strings.HasPrefix(v, "X-ZdpgoEmail-Auther") {
-			// 处理zdpgo_email作者
+			// 处理作者
 			author := strings.Replace(v, "X-ZdpgoEmail-Auther: ", "", 1)
-			m.Author = strings.TrimSpace(author)
-		} else if strings.HasPrefix(v, "X-ZdpgoSmtp-Auther") {
-			// 处理zdpgo_smtp作者
-			author := strings.Replace(v, "X-ZdpgoSmtp-Auther: ", "", 1)
 			m.Author = strings.TrimSpace(author)
 		} else if strings.HasPrefix(v, "Subject: ") {
 			// 处理标题
@@ -92,9 +88,9 @@ func (m *Message) ParseString(data string) error {
 					continue
 				}
 				if m.Attachments == nil {
-					m.Attachments = make(map[string][]byte)
+					m.Attachments = make(map[string]string)
 				}
-				m.Attachments[fileName] = content
+				m.Attachments[fileName] = base64.StdEncoding.EncodeToString(content)
 			}
 
 			// 找文件名
