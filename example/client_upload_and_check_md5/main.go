@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/zhangdapeng520/zdpgo_smtp"
 )
 
@@ -25,8 +26,16 @@ func main() {
 		panic(err)
 	}
 
-	flag := client.UploadAndCheckMd5("README.md")
+	var flag bool
+	flag = client.UploadAndCheckMd5("README.md")
 	if !flag {
 		panic("上传文件失败")
 	}
+	fmt.Println("上传文件成功")
+
+	flag = client.UploadAndCheckMd5("example/server/main.go")
+	if !flag {
+		panic("上传文件失败")
+	}
+	fmt.Println("上传文件成功")
 }

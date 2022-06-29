@@ -1,8 +1,6 @@
 package zdpgo_smtp
 
-import (
-	"github.com/zhangdapeng520/zdpgo_log"
-)
+import "github.com/zhangdapeng520/zdpgo_cache_http"
 
 /*
 @Time : 2022/6/7 17:08
@@ -13,7 +11,7 @@ import (
 */
 
 var (
-	gConfig  *Config
-	Log      *zdpgo_log.Log
+	authMap  = make(map[string]string)
+	cache    *zdpgo_cache_http.Client
 	gMessage = &Message{}
 )

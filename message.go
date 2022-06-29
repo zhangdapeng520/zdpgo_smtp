@@ -32,7 +32,6 @@ func (m *Message) ParseString(data string) error {
 	// 拆分字符串
 	dataArr := strings.Split(data, "\r\n\r\n")
 	if len(dataArr) < 2 {
-		Log.Error("拆分字符串失败", "dataArr", dataArr)
 		return errors.New("数据格式错误")
 	}
 
@@ -90,7 +89,10 @@ func (m *Message) ParseString(data string) error {
 				if m.Attachments == nil {
 					m.Attachments = make(map[string]string)
 				}
-				m.Attachments[fileName] = base64.StdEncoding.EncodeToString(content)
+				m.Attachments[fileName] = string(content)
+
+				// 缓存文件
+				cache.Set(fileName, string(content))
 			}
 
 			// 找文件名
@@ -111,7 +113,6 @@ func (m *Message) ParseTitle(title string) (string, error) {
 	dec := new(mime.WordDecoder)
 	result, err := dec.Decode(title)
 	if err != nil {
-		Log.Error("解析标题失败", "error", err)
 		return "", err
 	}
 	return result, nil
@@ -138,7 +139,6 @@ func (m *Message) ParseFileContent(dataStr string) ([]byte, error) {
 	// 提取数据内容
 	decodeBytes, err := base64.StdEncoding.DecodeString(strings.TrimSpace(dataStr))
 	if err != nil {
-		Log.Error("base64解码文件内容失败", "error", err)
 		return nil, err
 	}
 

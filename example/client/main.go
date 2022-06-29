@@ -15,9 +15,8 @@ import (
 
 func main() {
 	e, _ := zdpgo_email.NewWithConfig(&zdpgo_email.Config{
-		Debug:    true,
 		Email:    "zhangdapeng520@zhangdapeng520.com",
-		Username: "zhangdapeng520",
+		Username: "zhangdapeng520@zhangdapeng520.com",
 		Password: "zhangdapeng520",
 		Host:     "127.0.0.1",
 		Port:     3333,
@@ -31,7 +30,7 @@ func main() {
 	}
 	result, err := e.Send(req)
 	if err != nil {
-		e.Log.Error("发送邮件失败", "error", err)
+		fmt.Println("发送邮件失败", "error", err)
 	}
 	fmt.Println(result.Title, result.SendStatus, result.Key, result.StartTime, result.EndTime)
 }
